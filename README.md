@@ -13,7 +13,7 @@ Aquí encontrarás la resolución completa de la evaluación intermedia y final 
 # 1. DESCRIPCIÓN: 
 Este repositorio contiene las soluciones detalladas de los problemas y ejercicios de la evaluación intermedia y final del Módulo 2. Todas las soluciones están implementadas utilizando Python y MySQL workbench, aprovechando las funcionalidades ofrecidas por Jupyter Notebook y MySQL workbench para una experiencia de desarrollo interactiva y clara.
 
-1- La evaluacion intermedia del modulo 2 se centra en evaluar la comprensión y habilidades de python (módulo 1), además del uso de APIs, Web scraping, Beautiful Soup y Selenium.
+1- La evaluación intermedia del modulo 2 se centra en evaluar la comprensión y habilidades de python (módulo 1), además del uso de APIs, Web scraping, Beautiful Soup y Selenium.
 
 2- La evaluación final del módulo 2 se centra en evaluar la comprensión y habilidades en el lenguaje de consulta estructurado (SQL), fundamental para extraer y manipular datos almacenados en bases de datos relacionales. 
 

@@ -401,3 +401,21 @@ SELECT `a1`.`first_name` AS "actor1_Name", `a1`.`last_name` AS "actor1_Last_name
 		ON `a1`.`actor_id`< `a2`.`actor_id` -- Condición que garantiza que cada par de actores sea único y que no se dupliquen.
 	GROUP BY  -- Agrupamos los resultados por los identificadores únicos de los actores
 		`a1`.`actor_id`, `a2`.`actor_id`; 
+-- Opción 2: realiciacion con una CTE. La CTE ActoresConjuntos encuentra todos los pares de actores que han actuado juntos en al menos una película y cuenta el número de películas en las que han actuado juntos.
+-- La consulta principal se une a la CTE y a la tabla actor para obtener los nombres de los actores y el número de películas en las que han actuado juntos.
+WITH ActoresConjuntos AS (SELECT `fa1.actor_id` AS "actor1_id", `fa2.actor_id` AS "actor2_id", COUNT(*) AS "movies_together"
+								FROM 
+									`film_actor` AS `fa1`
+									JOIN `film_actor` AS `fa2`
+									ON `fa1.film_id` = `fa2.film_id` AND `fa1.actor_id < fa2.actor_id`
+								GROUP BY 
+									`fa1.actor_id`, `fa2.actor_id`)
+	SELECT 
+		`a1.first_name` AS "actor1_name", 
+		`a1.last_name` AS "actor1_last_name",
+		`a2.first_name` AS "actor2_name", 
+		`a2.last_name` AS "actor2_last_name",
+		`ac.movies_together`
+		FROM ActoresConjuntos ac
+			JOIN `actor a1` ON `ac.actor1_id` = `a1.actor_id`
+			JOIN `actor a2` ON `ac.actor2_id` = `a2.actor_id`;		

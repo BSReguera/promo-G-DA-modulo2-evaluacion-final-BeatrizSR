@@ -178,6 +178,7 @@ SELECT `f`.`title`
 	WHERE `c`.`name` = "Comedy" AND `f`.`length` > 180;
 
 -- 25.BONUS: Encuentra todos los actores que han actuado juntos en al menos una película. La consulta debe mostrar el nombre y apellido de los actores y el número de películas en las que han actuado juntos.
+-- Opción 1:
 SELECT `a1`.`first_name` AS "actor1_Name", `a1`.`last_name` AS "actor1_Last_name",
        `a2`.`first_name` AS "actor2_Name", `a2`.`last_name` AS "actor2_Last_name", 
 		(SELECT COUNT(*) 
@@ -190,3 +191,20 @@ SELECT `a1`.`first_name` AS "actor1_Name", `a1`.`last_name` AS "actor1_Last_name
 		ON `a1`.`actor_id`< `a2`.`actor_id`
 	GROUP BY 
 		`a1`.`actor_id`, `a2`.`actor_id`;
+-- Opción 2:
+WITH ActoresConjuntos AS (SELECT `fa1.actor_id` AS "actor1_id", `fa2.actor_id` AS "actor2_id", COUNT(*) AS "movies_together"
+								FROM 
+									`film_actor` AS `fa1`
+									JOIN `film_actor` AS `fa2`
+									ON `fa1.film_id` = `fa2.film_id` AND `fa1.actor_id < fa2.actor_id`
+								GROUP BY 
+									`fa1.actor_id`, `fa2.actor_id`)
+	SELECT 
+		`a1.first_name` AS "actor1_name", 
+		`a1.last_name` AS "actor1_last_name",
+		`a2.first_name` AS "actor2_name", 
+		`a2.last_name` AS "actor2_last_name",
+		`ac.movies_together`
+		FROM ActoresConjuntos ac
+			JOIN `actor a1` ON `ac.actor1_id` = `a1.actor_id`
+			JOIN `actor a2` ON `ac.actor2_id` = `a2.actor_id`;
