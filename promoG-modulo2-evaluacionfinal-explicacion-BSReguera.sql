@@ -80,6 +80,11 @@ SELECT `first_name`, `actor_id`
 SELECT `title`, `rating`
 	FROM `film`
     WHERE `rating` NOT LIKE "R" AND `rating` NOT LIKE "PG-13";
+
+-- Opción 2:
+SELECT `title`, `rating`
+	FROM `film`
+    WHERE `rating` NOT IN ("R", "PG-13");
     
 -- 9. Encuentra la cantidad total de películas en cada clasificación de la tabla film y muestra la clasificación junto con el recuento.
 -- Explicación: Utilizamos la función de agregación COUNT() (función para contar) junto con la cláusula GROUP BY (función para agrupar) para contar el número de películas en cada clasificación.
@@ -294,27 +299,26 @@ HAVING COUNT(`fa`.`film_id`) >= 5;
 
 
 -- 22. Encuentra el título de todas las películas que fueron alquiladas por más de 5 días. Utiliza una subconsulta para encontrar los rental_ids con una duración superior a 5 días y luego selecciona las películas correspondientes.
--- Explicación: Empleamos una subconsulta para encontrar los `film_id` de las películas alquiladas por más de 5 días, mediante la unión de las tablas film e inventory usando la operacion INNER JOIN.
--- Y posteriormente seleccionamos los títulos de las películas que corresponden a los film_id obtenidos en la subconsulta.
-SELECT `title`, `r`.`rental_id`
-	FROM `film` 
-	WHERE `film_id` IN (SELECT DISTINCT `i`.`film_id`
-						FROM `rental` AS `r`
-						INNER JOIN `inventory` AS `i`
-							ON `r`.`inventory_id` = `i`.`inventory_id`
-						WHERE `return_date`- `rental_date` > 5);
+-- Explicación: La consulta selecciona solo el título de las peliculas de la tabla film, Se filtran las películas basadas en el film_id obtenido de una subconsulta que involucra las tablas inventory y rental.
+-- Y usando DATEDIFF se calcula la diferencia en días entre la fecha de retorno y la fecha de alquiler, seleccionando solo aquellas películas que han sido alquiladas por más de 5 días.
+SELECT `title`
+FROM `film` 
+WHERE `film_id` IN (SELECT DISTINCT `i`.`film_id`  
+                          FROM `inventory` as `i`
+                          JOIN `rental` as `r`
+							ON `i`.`inventory_id` = `r`.`inventory_id`
+                            WHERE DATEDIFF(`return_date`, `rental_date`) > 5 );
 -- PASO A PASO:
--- 1. Utilizamos una subconsulta para encontrar los film_id de las películas que fueron alquiladas por más de 5 días.
--- La subconsulta se realiza en la tabla rental uniéndola con inventory mediante un INNER JOIN y seleccionando los film_id donde la diferencia entre las fechas de devolución y alquiler sea mayor a 5 días.
-(SELECT DISTINCT `i`.`film_id`
-						FROM `rental` AS `r`
-						INNER JOIN `inventory` AS `i`
-							ON `r`.`inventory_id` = `i`.`inventory_id`
-						WHERE `return_date`- `rental_date` > 5);
--- 2. Y seleccionamos los títulos de las películas correspondientes a los film_id obtenidos en la subconsulta.
-SELECT `title`, `r`.`rental_id`
-	FROM `film` 
-	WHERE `film_id` IN(SUBCONSULTA):
+-- 1. Realizamos la subconsulta para obtener aquellas películas que han sido alquiladas por más de 5 días.
+(SELECT DISTINCT `i`.`film_id`  
+                          FROM `inventory` as `i`
+                          JOIN `rental` as `r`
+							ON `i`.`inventory_id` = `r`.`inventory_id`
+                            WHERE DATEDIFF(`return_date`, `rental_date`) > 5 )
+-- 2. Y posteriormente seleccionamos el título de la tabla film, utilizando la cláusula WHERE y NOT IN.
+SELECT `title`
+FROM `film` 
+WHERE `film_id` IN ;
 
 
 -- 23.Encuentra el nombre y apellido de los actores que no han actuado en ninguna película de la categoría "Horror". Utiliza una subconsulta para encontrar los actores que han actuado en películas de la categoría "Horror" y luego exclúyelos de la lista de actores.
@@ -401,21 +405,19 @@ SELECT `a1`.`first_name` AS "actor1_Name", `a1`.`last_name` AS "actor1_Last_name
 		ON `a1`.`actor_id`< `a2`.`actor_id` -- Condición que garantiza que cada par de actores sea único y que no se dupliquen.
 	GROUP BY  -- Agrupamos los resultados por los identificadores únicos de los actores
 		`a1`.`actor_id`, `a2`.`actor_id`; 
--- Opción 2: realiciacion con una CTE. La CTE ActoresConjuntos encuentra todos los pares de actores que han actuado juntos en al menos una película y cuenta el número de películas en las que han actuado juntos.
--- La consulta principal se une a la CTE y a la tabla actor para obtener los nombres de los actores y el número de películas en las que han actuado juntos.
-WITH ActoresConjuntos AS (SELECT `fa1.actor_id` AS "actor1_id", `fa2.actor_id` AS "actor2_id", COUNT(*) AS "movies_together"
-								FROM 
-									`film_actor` AS `fa1`
-									JOIN `film_actor` AS `fa2`
-									ON `fa1.film_id` = `fa2.film_id` AND `fa1.actor_id < fa2.actor_id`
-								GROUP BY 
-									`fa1.actor_id`, `fa2.actor_id`)
-	SELECT 
-		`a1.first_name` AS "actor1_name", 
-		`a1.last_name` AS "actor1_last_name",
-		`a2.first_name` AS "actor2_name", 
-		`a2.last_name` AS "actor2_last_name",
-		`ac.movies_together`
-		FROM ActoresConjuntos ac
-			JOIN `actor a1` ON `ac.actor1_id` = `a1.actor_id`
-			JOIN `actor a2` ON `ac.actor2_id` = `a2.actor_id`;		
+        
+-- Opción 2: Solución mediante una CTE:
+WITH `ActoresRelacionados` AS (SELECT `a1`.`actor_id` AS `actor_id1`, `a2`.`actor_id` AS `actor_id2`, COUNT(*) AS `cantidad_actuaciones`
+								FROM `film_actor` AS `a1`
+                                JOIN `film_actor` AS `a2`
+                                ON `a1`.`film_id` = `a2`.`film_id` AND `a1`.`actor_id` < `a2`.`actor_id`
+                                GROUP BY `a1`.`actor_id`, `a2`.`actor_id`  HAVING COUNT(*) >= 1 )
+SELECT `actor1`.`first_name` AS `actor1_nombre`, `actor1`.`last_name` AS `actor1_apellido`,
+`actor2`.`first_name` AS `actor2_nombre`, `actor2`.`last_name` AS `actor2_apellido`, `cantidad_actuaciones`
+	FROM `ActoresRelacionados`
+	JOIN `actor` AS `actor1`
+	ON `actor1`.`actor_id` = `actor_id1`
+	JOIN `actor` AS `actor2`
+	ON `actor2`.`actor_id` = `actor_id2`
+	ORDER BY `cantidad_actuaciones` DESC;
+    
